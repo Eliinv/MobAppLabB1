@@ -45,7 +45,7 @@ interface GameViewModel {
 
 class GameVM(
     private val userPreferencesRepository: UserPreferencesRepository
-): GameViewModel, ViewModel() {
+) : GameViewModel, ViewModel() {
     private val _gameState = MutableStateFlow(GameState())
     override val gameState: StateFlow<GameState>
         get() = _gameState.asStateFlow()
@@ -113,20 +113,36 @@ class GameVM(
     private fun checkVisualMatch() {
         val currentIndex = _gameState.value.eventValue
         Log.d("GameVM", "checkVisualMatch called with currentIndex: $currentIndex")
-        if (currentIndex >= nBack && events[currentIndex] == events[currentIndex - nBack]) {
-            _score.value += 1
-            updateHighscoreIfNeeded()
-            Log.d("GameVM", "Visual match found! Score: ${_score.value}")
+
+        // Kontrollera att currentIndex är tillräckligt stort för att undvika indexfel
+        if (currentIndex >= nBack) { // Gör så att vi kan kolla upp till nBack
+            for (i in 1..nBack) {
+                // Kolla att vi inte går utanför arrayens gränser
+                if (currentIndex - i >= 0) {
+                    Log.d("GameVM", "Checking index $currentIndex against index ${currentIndex - i} with values: ${events[currentIndex]} vs ${events[currentIndex - i]}")
+
+                    // Jämför nuvarande värde med det värde som är n steg bakåt
+                    if (events[currentIndex] == events[currentIndex - i]) {
+                        _score.value += 1 // Öka poängen
+                        updateHighscoreIfNeeded() // Uppdatera highscore
+                        Log.d("GameVM", "Visual match found at index $currentIndex with index ${currentIndex - i}. Score: ${_score.value}")
+                        return // Avsluta loopen om vi hittar en match
+                    }
+                }
+            }
         } else {
-            Log.d("GameVM", "No visual match found.")
+            Log.d("GameVM", "CurrentIndex is less than nBack. Cannot check for matches.")
         }
     }
 
     private fun checkAudioMatch() {
         val currentIndex = _gameState.value.eventValue
+        Log.d("GameVM", "checkAudioMatch called with currentIndex: $currentIndex")
+
         if (currentIndex >= nBack && events[currentIndex] == events[currentIndex - nBack]) {
             _score.value += 1
             updateHighscoreIfNeeded()
+            Log.d("GameVM", "Audio match found! Score: ${_score.value}")
         } else {
             Log.d("GameVM", "No audio match found.")
         }
@@ -136,6 +152,7 @@ class GameVM(
         viewModelScope.launch {
             for (value in events) {
                 _gameState.value = _gameState.value.copy(eventValue = value)
+                Log.d("GameVM", "New event value: $value") // Log för att se att eventValue uppdateras
                 delay(eventInterval)
             }
             updateHighscoreIfNeeded()
@@ -143,10 +160,11 @@ class GameVM(
     }
 
     private suspend fun runVisualGame(events: Array<Int>) {
+        delay(2000) // Vänta i 2 sekunder innan nästa händelse visas
         for (value in events) {
             _gameState.value = _gameState.value.copy(eventValue = value)
             Log.d("GameVM", "New event value: $value") // Log för att se att eventValue uppdateras
-            delay(eventInterval)  // Vänta i 2 sekunder innan nästa händelse visas
+            delay(eventInterval)
         }
         updateHighscoreIfNeeded()
     }
@@ -181,11 +199,10 @@ enum class GameType {
 
 data class GameState(
     val gameType: GameType = GameType.Visual,
-    val eventValue: Int = -1
+    val eventValue: Int = -1 // Se till att detta är av typ Int
 )
 
-
-class FakeVM: GameViewModel{
+class FakeVM : GameViewModel {
     override val gameState: StateFlow<GameState>
         get() = MutableStateFlow(GameState()).asStateFlow()
     override val score: StateFlow<Int>
@@ -195,13 +212,7 @@ class FakeVM: GameViewModel{
     override val nBack: Int
         get() = 2
 
-    override fun setGameType(gameType: GameType) {
-    }
-
-    override fun startGame() {
-    }
-
-    override fun checkMatch() {
-    }
+    override fun setGameType(gameType: GameType) {}
+    override fun startGame() {}
+    override fun checkMatch() {}
 }
-
