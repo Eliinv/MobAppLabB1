@@ -1,34 +1,90 @@
 package mobappdev.example.nback_cimpl.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import mobappdev.example.nback_cimpl.ui.viewmodels.GameVM
+import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
+import mobappdev.example.nback_cimpl.ui.viewmodels.GameType
 
 @Composable
-fun GameScreen(viewModel: GameVM) {
-    val gameState by viewModel.gameState.collectAsState()
+fun GameScreen(
+    vm: GameViewModel,
+    onBackToHome: () -> Unit
+) {
+    val gameState by vm.gameState.collectAsState()
+    val highscore by vm.highscore.collectAsState()
+    val score by vm.score.collectAsState()
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "N-Back Test")
-        GameMatrix(currentEvent = gameState.eventValue)
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = viewModel::checkMatch) {
-            Text(text = "Check Match")
+    LaunchedEffect(Unit) {
+        vm.startGame() // Starta spelet automatiskt när GameScreen laddas
+    }
+
+    Scaffold { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Knapp för att gå tillbaka till startsidan
+            Button(
+                onClick = onBackToHome,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text("Back to Home")
+            }
+
+            // Visa högsta poängen
+            Text(
+                text = "High Score: $highscore",
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            // Visa nuvarande poäng
+            Text(
+                text = "Current Score: $score",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
+
+            // Visa vald stimuli
+            Text(
+                text = "Selected Stimuli: ${gameState.gameType}",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
+
+            // Visa matris eller ljudtext beroende på valt stimuli
+            if (gameState.gameType == GameType.Visual) {
+                GameMatrix(currentEvent = gameState.eventValue)
+            } else if (gameState.gameType == GameType.Audio) {
+                Text(
+                    text = "Playing sound for value: ${gameState.eventValue}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Knappar för att registrera en matchning
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(onClick = {
+                    vm.checkMatch() // Kontrollera matchning för både visuell och ljudstimuli
+                }) {
+                    Text("Match")
+                }
+            }
         }
     }
 }
-
-
