@@ -2,31 +2,9 @@ package mobappdev.example.nback_cimpl.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,19 +16,10 @@ import kotlinx.coroutines.launch
 import mobappdev.example.nback_cimpl.R
 import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
+import mobappdev.example.nback_cimpl.ui.viewmodels.GameType
+import mobappdev.example.nback_cimpl.ui.screens.GameMatrix
 
-/**
- * This is the Home screen composable
- *
- * Currently this screen shows the saved highscore
- * It also contains a button which can be used to show that the C-integration works
- * Furthermore it contains two buttons that you can use to start a game
- *
- * Date: 25-08-2023
- * Version: Version 1.0
- * Author: Yeetivity
- *
- */
+
 
 @Composable
 fun HomeScreen(
@@ -61,13 +30,16 @@ fun HomeScreen(
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // Flagga för att hålla reda på om spelet har startat
+    var isGameStarted by remember { mutableStateOf(false) }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) }
-    ) {
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it),
+                .padding(innerPadding),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -77,18 +49,14 @@ fun HomeScreen(
                 style = MaterialTheme.typography.headlineLarge
             )
 
-            // Matrisen med markerad aktuell händelse
-            GameMatrix(currentEvent = gameState.eventValue)
+            // Text för att välja stimuli-typ
+            Text(
+                text = "Choose Stimuli Type",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Knapp för att starta spelet
-            Button(onClick = vm::startGame) {
-                Text(text = "START GAME")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
+            // Knappar för att välja stimuli-typ och kontrollera matchning om spelet är startat
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -97,27 +65,16 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(onClick = {
-                    scope.launch {
-                        snackBarHostState.showSnackbar(
-                            message = "Hey! you clicked the audio button",
-                            duration = SnackbarDuration.Short
-                        )
-                    }
-                }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.sound_on),
-                        contentDescription = "Sound",
-                        modifier = Modifier
-                            .height(48.dp)
-                            .aspectRatio(3f / 2f)
-                    )
-                }
-                Button(onClick = {
-                    scope.launch {
-                        snackBarHostState.showSnackbar(
-                            message = "Hey! you clicked the visual button",
-                            duration = SnackbarDuration.Short
-                        )
+                    if (isGameStarted) {
+                        vm.checkMatch() // Kontrollera matchning när spelet är igång
+                    } else {
+                        vm.setGameType(GameType.Visual)
+                        scope.launch {
+                            snackBarHostState.showSnackbar(
+                                message = "Visual stimuli selected",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
                     }
                 }) {
                     Icon(
@@ -128,35 +85,61 @@ fun HomeScreen(
                             .aspectRatio(3f / 2f)
                     )
                 }
-            }
-        }
-    }
-}
-
-// Funktion för att visa en 3x3 matris med markerad cell för den aktuella händelsen
-@Composable
-fun GameMatrix(currentEvent: Int) {
-    Column {
-        for (row in 0 until 3) {
-            Row {
-                for (col in 0 until 3) {
-                    val cellIndex = row * 3 + col
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .background(
-                                if (cellIndex == currentEvent) Color.Blue else Color.Gray
+                Button(onClick = {
+                    if (isGameStarted) {
+                        vm.checkMatch() // Kontrollera matchning när spelet är igång
+                    } else {
+                        vm.setGameType(GameType.Audio)
+                        scope.launch {
+                            snackBarHostState.showSnackbar(
+                                message = "Audio stimuli selected",
+                                duration = SnackbarDuration.Short
                             )
-                            .border(1.dp, Color.Black),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "$cellIndex")
+                        }
                     }
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.sound_on),
+                        contentDescription = "Sound",
+                        modifier = Modifier
+                            .height(48.dp)
+                            .aspectRatio(3f / 2f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Knapp för att starta spelet
+            Button(
+                onClick = {
+                    vm.startGame()
+                    isGameStarted = true // Sätt flaggan till true när spelet startar
+                },
+                enabled = gameState.gameType != null  // Aktiveras endast om ett stimuli är valt
+            ) {
+                Text(text = "START GAME")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Visa matris eller text endast om spelet är startat och stimuli är valt
+            if (isGameStarted && gameState.eventValue != -1) {
+                if (gameState.gameType == GameType.Visual) {
+                    GameMatrix(currentEvent = gameState.eventValue)
+                } else if (gameState.gameType == GameType.Audio) {
+                    Text(
+                        text = "Playing sound: ${gameState.eventValue}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
     }
 }
+
 
 @Preview
 @Composable
