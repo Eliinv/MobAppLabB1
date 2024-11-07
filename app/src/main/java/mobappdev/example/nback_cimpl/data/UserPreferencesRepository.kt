@@ -26,30 +26,34 @@ import java.io.IOException
  *
  */
 
-class UserPreferencesRepository (
+
+class UserPreferencesRepository(
     private val dataStore: DataStore<Preferences>
-){
-    private companion object {
-        val HIGHSCORE = intPreferencesKey("highscore")
-        const val TAG = "UserPreferencesRepo"
+) {
+    companion object {
+        private val HIGHSCORE_KEY = intPreferencesKey("highscore")
+        private const val TAG = "UserPreferencesRepo"
     }
 
+    // Flow that emits the highscore value from DataStore
     val highscore: Flow<Int> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading preferences", it)
+        .catch { exception ->
+            if (exception is IOException) {
+                Log.e(TAG, "Error reading preferences", exception)
                 emit(emptyPreferences())
             } else {
-                throw it
+                throw exception
             }
         }
         .map { preferences ->
-            preferences[HIGHSCORE] ?: 0
+            // Get the highscore or return 0 if it doesn't exist
+            preferences[HIGHSCORE_KEY] ?: 0
         }
 
-    suspend fun saveHighScore(score: Int) {
+    // Function to save a new highscore value to DataStore
+    suspend fun saveHighscore(score: Int) {
         dataStore.edit { preferences ->
-            preferences[HIGHSCORE] = score
+            preferences[HIGHSCORE_KEY] = score
         }
     }
 }

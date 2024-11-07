@@ -89,6 +89,16 @@ class GameVM(
                 GameType.Visual -> runVisualGame(events)
             }
             // Todo: update the highscore
+            updateHighscoreIfNeeded();
+        }
+    }
+
+    private fun updateHighscoreIfNeeded() {
+        if (_score.value > _highscore.value) {
+            _highscore.value = _score.value
+            viewModelScope.launch {
+                userPreferencesRepository.saveHighscore(_highscore.value)
+            }
         }
     }
 
@@ -97,17 +107,36 @@ class GameVM(
          * Todo: This function should check if there is a match when the user presses a match button
          * Make sure the user can only register a match once for each event.
          */
+        val currentIndex = _gameState.value.eventValue
+        if (currentIndex >= nBack && events[currentIndex] == events[currentIndex - nBack]) {
+            _score.value += 1  // Öka poängen vid matchning
+            updateHighscoreIfNeeded()  // Uppdatera highscore om det behövs
+        } else {
+            // Felaktig matchning
+            Log.d("GameVM", "No match found.")
+        }
+
+
     }
     private fun runAudioGame() {
         // Todo: Make work for Basic grade
+        viewModelScope.launch {
+            for (value in events) {
+                _gameState.value = _gameState.value.copy(eventValue = value)
+                // Här kan du lägga till kod för att spela ljudet som motsvarar `value`
+                delay(eventInterval)
+            }
+            updateHighscoreIfNeeded()  // Uppdatera highscore när spelet är klart
+        }
     }
 
     private suspend fun runVisualGame(events: Array<Int>){
         // Todo: Replace this code for actual game code
         for (value in events) {
             _gameState.value = _gameState.value.copy(eventValue = value)
-            delay(eventInterval)
+            delay(eventInterval)  // Vänta i 2 sekunder innan nästa händelse visas
         }
+        updateHighscoreIfNeeded()  // Uppdatera highscore när spelet är klart
 
     }
 
@@ -166,3 +195,4 @@ class FakeVM: GameViewModel{
     override fun checkMatch() {
     }
 }
+

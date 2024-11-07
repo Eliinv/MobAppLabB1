@@ -3,3 +3,8 @@
 5	181	7526199814157954	CMakeFiles/JniBridge.dir/JniBridge.c.o	13fcf4092fef5b4
 155	341	7526199816107945	C:/MobAppHT24/LabB1/MobAppLabB1/app/build/intermediates/cxx/Debug/3e01z3q1/obj/x86/libnback_cimpl.so	1dfff0038643725b
 342	504	7526199817708127	C:/MobAppHT24/LabB1/MobAppLabB1/app/build/intermediates/cxx/Debug/3e01z3q1/obj/x86/libJniBridge.so	7a79c05f2fa74377
+0	16	0	clean	58a430e73d8b2432
+8	827	7526972173300954	CMakeFiles/nback_cimpl.dir/nback.c.o	e024d7f263e244ad
+16	913	7526972173390896	CMakeFiles/JniBridge.dir/JniBridge.c.o	13fcf4092fef5b4
+828	5593	7526972214201345	C:/MobAppHT24/LabB1/MobAppLabB1/app/build/intermediates/cxx/Debug/3e01z3q1/obj/x86/libnback_cimpl.so	1dfff0038643725b
+5594	7920	7526972243818558	C:/MobAppHT24/LabB1/MobAppLabB1/app/build/intermediates/cxx/Debug/3e01z3q1/obj/x86/libJniBridge.so	7a79c05f2fa74377
